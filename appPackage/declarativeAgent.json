@@ -1,0 +1,21 @@
+{
+    "version": "v1.8",
+    "name": "FS analytics",
+    "description": "Declarative agent created with Microsoft 365 Agents Toolkit can assist user in calling APIs and retrieving responses",
+    "instructions": "$[file('instruction.txt')]",
+    "conversation_starters": [
+        {
+            "text": "Retrieve aggregated purchase totals/breakdowns (OLAP-style cube)."
+        },
+        {
+            "text": "Retrieve individual (row-level) purchase invoice records."
+        }
+    ],
+    "actions": [
+        {
+            "id": "action_1",
+            "file": "ai-plugin.json"
+        }
+    ],
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.8/schema.json"
+}

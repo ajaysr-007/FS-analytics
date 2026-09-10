@@ -1,0 +1,32 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.5",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "status: ${if(status, status, 'N/A')}",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "total_records: ${if(total_records, total_records, 'N/A')}",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "page: ${if(page, page, 'N/A')}",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "page_size: ${if(page_size, page_size, 'N/A')}",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "total_pages: ${if(total_pages, total_pages, 'N/A')}",
+            "wrap": true
+        }
+    ]
+}

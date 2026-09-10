@@ -1,0 +1,59 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
+    "schema_version": "v2.4",
+    "name_for_human": "FS Purchase Analytics API",
+    "description_for_human": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one or two dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\").\n",
+    "description_for_model": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one or two dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\").\n",
+    "contact_email": "publisher-email@example.com",
+    "namespace": "fsanalytics",
+    "capabilities": {},
+    "functions": [
+        {
+            "name": "getPurchaseAggregator",
+            "description": "Groups the purchase register by one or two dimensions and returns a totals summary plus a per-group breakdown with all measures (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count). Use this whenever the user wants totals, trends, a breakdown, or a summary rather than raw invoice rows. group_by must be sent as a JSON array (1 or 2 dimensions) in the request body.\n",
+            "capabilities": {
+                "response_semantics": {
+                    "data_path": "$",
+                    "properties": {
+                        "title": "$.status",
+                        "subtitle": "$.date_granularity"
+                    },
+                    "static_template": {
+                        "file": "adaptiveCards/getPurchaseAggregator1.json"
+                    }
+                }
+            }
+        },
+        {
+            "name": "getPurchaseRegister",
+            "description": "Returns a paginated list of purchase register records, optionally filtered by document number, supplier, date ranges, MSME status, or payment status. Use this when the user wants to see specific invoices/transactions rather than totals or a breakdown.\n",
+            "capabilities": {
+                "response_semantics": {
+                    "data_path": "$",
+                    "properties": {
+                        "title": "$.status",
+                        "subtitle": "$.total_records"
+                    },
+                    "static_template": {
+                        "file": "adaptiveCards/getPurchaseRegister1.json"
+                    }
+                }
+            }
+        }
+    ],
+    "runtimes": [
+        {
+            "type": "OpenApi",
+            "auth": {
+                "type": "None"
+            },
+            "spec": {
+                "url": "apiSpecificationFile/openapi.yaml"
+            },
+            "run_for_functions": [
+                "getPurchaseRegister",
+                "getPurchaseAggregator"
+            ]
+        }
+    ]
+}

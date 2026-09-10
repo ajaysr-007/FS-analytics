@@ -1,0 +1,341 @@
+openapi: 3.0.1
+info:
+  title: FS Purchase Analytics API
+  description: >
+    Provides row-level and aggregated (cube-style) access to the purchase
+    register for an AI agent. Use get_purchase_register when the user wants
+    to see individual invoices/transactions. Use get_purchase_aggregator
+    when the user wants totals, breakdowns, trends, or a summary grouped by
+    one or two dimensions (e.g. "monthly totals", "breakdown by supplier",
+    "MSME vs non-MSME spend").
+  version: 1.0.0
+servers:
+  - url: https://bmagents-bzf5fybng9c7cnbk.centralindia-01.azurewebsites.net/api
+    description: Production Azure Functions endpoint
+
+paths:
+  /get_purchase_register:
+    get:
+      operationId: getPurchaseRegister
+      summary: Retrieve individual (row-level) purchase invoice records.
+      description: >
+        Returns a paginated list of purchase register records, optionally
+        filtered by document number, supplier, date ranges, MSME status, or
+        payment status. Use this when the user wants to see specific
+        invoices/transactions rather than totals or a breakdown.
+      parameters:
+        - name: document_number
+          in: query
+          description: >
+            Exact match on the invoice/document number. Use when the user
+            names a specific invoice, e.g. "show me invoice INV-2026-0042".
+          schema:
+            type: string
+        - name: supplier_name
+          in: query
+          description: >
+            Case-insensitive partial match on supplier name. Use when the
+            user names a supplier/vendor, e.g. "purchases from Acme" or
+            "invoices from any supplier with 'traders' in the name".
+          schema:
+            type: string
+        - name: supplier_gstin
+          in: query
+          description: >
+            Exact match on the supplier's GSTIN. Use only when the user
+            explicitly provides a GSTIN value, not a supplier name.
+          schema:
+            type: string
+        - name: document_date_from
+          in: query
+          description: >
+            Include only records with document_date (invoice date) on or
+            after this date (YYYY-MM-DD). Use for phrases like "since
+            January", "from last month", "after 1 April 2026". Resolve
+            relative periods using the current date before calling.
+          schema:
+            type: string
+            format: date
+        - name: document_date_to
+          in: query
+          description: >
+            Include only records with document_date (invoice date) on or
+            before this date (YYYY-MM-DD). Use for phrases like "up to June",
+            "before last month", "this quarter" (as the range end).
+          schema:
+            type: string
+            format: date
+        - name: due_date_from
+          in: query
+          description: >
+            Include only records with due_date on or after this date
+            (YYYY-MM-DD). Use when the user is asking about payment due
+            dates rather than invoice dates, e.g. "due after 1 September".
+          schema:
+            type: string
+            format: date
+        - name: due_date_to
+          in: query
+          description: >
+            Include only records with due_date on or before this date
+            (YYYY-MM-DD). Use when the user asks about payment due dates,
+            e.g. "due before end of month".
+          schema:
+            type: string
+            format: date
+        - name: payment_date_from
+          in: query
+          description: >
+            Include only records with payment_date on or after this date
+            (YYYY-MM-DD). Use when the user asks about when invoices were
+            actually paid, e.g. "paid since August".
+          schema:
+            type: string
+            format: date
+        - name: payment_date_to
+          in: query
+          description: >
+            Include only records with payment_date on or before this date
+            (YYYY-MM-DD). Use when the user asks about when invoices were
+            actually paid, e.g. "paid before last week".
+          schema:
+            type: string
+            format: date
+        - name: msme_flag
+          in: query
+          description: >
+            Filter to MSME suppliers only (true) or non-MSME suppliers only
+            (false). Use when the user says "MSME", "non-MSME", or
+            "small/medium enterprise" suppliers.
+          schema:
+            type: boolean
+        - name: payment_flag
+          in: query
+          description: >
+            Filter to paid invoices only (true) or unpaid/outstanding
+            invoices only (false). Use for words like "paid", "unpaid",
+            "pending", "outstanding", "settled".
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: >
+            Page number to retrieve, starting at 1. Defaults to 1. Increment
+            when the user asks to see more results after total_pages > page.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: >
+            Number of records to return per page (max 500). Defaults to 100.
+            Increase only if the user asks for a large number of records at
+            once; otherwise leave at the default.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: Successful response with a page of purchase register records.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    description: Returns OK on success.
+                    type: string
+                  total_records:
+                    description: Total number of matching records across all pages.
+                    type: integer
+                  page:
+                    description: The page number returned.
+                    type: integer
+                  page_size:
+                    description: Number of records per page.
+                    type: integer
+                  total_pages:
+                    description: Total number of pages available for this filter set.
+                    type: integer
+                  records:
+                    description: >
+                      The purchase invoice records for this page, including
+                      supplier details, dates, tax amounts, invoice_value,
+                      and derived fields payment_flag/gst_type/overdue.
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Malformed request (invalid parameter value).
+        '500':
+          description: Internal server or data-loading error.
+
+  /get_purchase_aggregator:
+    post:
+      operationId: getPurchaseAggregator
+      summary: Retrieve aggregated purchase totals/breakdowns (OLAP-style cube).
+      description: >
+        Groups the purchase register by one or two dimensions and returns a
+        totals summary plus a per-group breakdown with all measures
+        (invoice_count, taxable_value, cgst_amount, sgst_amount,
+        igst_amount, cess_amount, invoice_value, overdue_count). Use this
+        whenever the user wants totals, trends, a breakdown, or a summary
+        rather than raw invoice rows. group_by must be sent as a JSON array
+        (1 or 2 dimensions) in the request body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - group_by
+              properties:
+                group_by:
+                  description: >
+                    1 or 2 dimensions to group by, sent as an array even for
+                    a single dimension, e.g. ["document_date"] or
+                    ["document_date","msme_flag"]. Map user phrasing to
+                    dimensions as follows — document_date: "by month",
+                    "trend over time", "invoice date" totals; due_date:
+                    grouping by when payment is/was due; payment_date:
+                    grouping by when invoices were actually paid; supplier:
+                    "by supplier", "top vendors", "which supplier"; msme_flag:
+                    "MSME vs non-MSME", "MSME split"; payment_flag: "paid vs
+                    unpaid", "payment status split"; gst_type: "intra-state
+                    vs inter-state", "INTRA vs INTER". Combine two dimensions
+                    for compound asks, e.g. "monthly MSME spend" ->
+                    ["document_date","msme_flag"].
+                  type: array
+                  items:
+                    type: string
+                    enum: [document_date, due_date, payment_date, supplier, msme_flag, payment_flag, gst_type]
+                  minItems: 1
+                  maxItems: 2
+                date_granularity:
+                  description: >
+                    Bucket size applied to any date dimension present in
+                    group_by. Defaults to monthly. Map wording to values —
+                    "daily"/"per day" -> daily; "weekly"/"per week" -> weekly;
+                    "monthly"/"per month" (default) -> monthly;
+                    "quarterly"/"per quarter"/"Q1/Q2" -> quarterly;
+                    "yearly"/"annual"/"per year"/"FY" -> yearly.
+                  type: string
+                  enum: [daily, weekly, monthly, quarterly, yearly]
+                  default: monthly
+                document_number:
+                  description: >
+                    Exact match on the invoice/document number, applied
+                    before aggregation. Rarely used for aggregate queries.
+                  type: string
+                supplier_name:
+                  description: >
+                    Case-insensitive partial match on supplier name, applied
+                    before aggregation. Use to scope totals to one supplier,
+                    e.g. "total spend with Acme this year".
+                  type: string
+                supplier_gstin:
+                  description: >
+                    Exact match on the supplier's GSTIN, applied before
+                    aggregation. Use only when the user gives a GSTIN value.
+                  type: string
+                document_date_from:
+                  description: >
+                    Include only records with document_date (invoice date) on
+                    or after this date (YYYY-MM-DD), applied before
+                    aggregation. Resolve relative periods (e.g. "last
+                    quarter", "this year") using the current date.
+                  type: string
+                  format: date
+                document_date_to:
+                  description: >
+                    Include only records with document_date (invoice date) on
+                    or before this date (YYYY-MM-DD), applied before
+                    aggregation.
+                  type: string
+                  format: date
+                due_date_from:
+                  description: >
+                    Include only records with due_date on or after this date
+                    (YYYY-MM-DD), applied before aggregation. Use when scoping
+                    by payment due date rather than invoice date.
+                  type: string
+                  format: date
+                due_date_to:
+                  description: >
+                    Include only records with due_date on or before this date
+                    (YYYY-MM-DD), applied before aggregation.
+                  type: string
+                  format: date
+                payment_date_from:
+                  description: >
+                    Include only records with payment_date on or after this
+                    date (YYYY-MM-DD), applied before aggregation. Use when
+                    scoping by when invoices were actually paid.
+                  type: string
+                  format: date
+                payment_date_to:
+                  description: >
+                    Include only records with payment_date on or before this
+                    date (YYYY-MM-DD), applied before aggregation.
+                  type: string
+                  format: date
+                msme_flag:
+                  description: >
+                    Scope aggregation to MSME suppliers only (true) or
+                    non-MSME suppliers only (false) before grouping. Use
+                    together with a different group_by (e.g. group by
+                    supplier while msme_flag=true) rather than as the
+                    group_by dimension itself when the user wants both a
+                    filter and a different breakdown.
+                  type: boolean
+                payment_flag:
+                  description: >
+                    Scope aggregation to paid invoices only (true) or
+                    unpaid/outstanding invoices only (false) before grouping.
+                  type: boolean
+      responses:
+        '200':
+          description: Successful response with aggregated summary and breakdown.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    description: Returns OK on success.
+                    type: string
+                  filters_applied:
+                    description: Echo of the pre-filters that were applied before aggregation.
+                    type: object
+                  group_by:
+                    description: The dimension(s) that were grouped on.
+                    type: array
+                    items:
+                      type: string
+                  date_granularity:
+                    description: The bucket size that was used for any date dimension.
+                    type: string
+                  summary:
+                    description: >
+                      Grand totals across all matching records: invoice_count,
+                      taxable_value, cgst_amount, sgst_amount, igst_amount,
+                      cess_amount, invoice_value, overdue_count. Use this to
+                      answer "how much / how many in total" questions.
+                    type: object
+                  breakdown:
+                    description: >
+                      One row per group_by combination, each containing the
+                      group's dimension value(s) plus the same eight measures
+                      as summary. Use this for "by month", "by supplier",
+                      etc. breakdown tables.
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Malformed request (invalid group_by, dimension, or parameter value).
+        '500':
+          description: Internal server or data-loading error.
