@@ -2,15 +2,15 @@
     "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
     "schema_version": "v2.4",
     "name_for_human": "FS Purchase Analytics API",
-    "description_for_human": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one or two dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\").\n",
-    "description_for_model": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one or two dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\").\n",
+    "description_for_human": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
+    "description_for_model": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
     "contact_email": "support@botmantra.com",
     "namespace": "fsanalytics",
     "capabilities": {},
     "functions": [
         {
             "name": "getPurchaseAggregator",
-            "description": "Groups the purchase register by one or two dimensions and returns a totals summary plus a per-group breakdown with all measures (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count). Use this whenever the user wants totals, trends, a breakdown, or a summary rather than raw invoice rows. group_by must be sent as a JSON array (1 or 2 dimensions) in the request body.\n"
+            "description": "Groups the purchase register by one to four dimensions and returns a totals summary plus a per-group breakdown with all measures (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count). Use this whenever the user wants totals, trends, a breakdown, or a summary rather than raw invoice rows. group_by must be sent as a JSON array (1 to 4 dimensions) in the request body. Supports optional sort_by/sort_order and page/page_size for large breakdowns; omit page/page_size to return all groups.\n"
         },
         {
             "name": "getPurchaseRegister",

@@ -1,6 +1,6 @@
 {
     "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.8/schema.json",
-    "version": "v1.8",
+    "version": "v1.8", 
     "name": "FS analytics",
     "description": "FS Analytics is an intelligent purchase-data analytics assistant running inside Microsoft 365 Copilot. It helps users retrieve row-level invoice records or aggregated totals and breakdowns from the purchase register, with filtering by supplier, date, MSME status, payment status, and GST type.",
     "instructions": "$[file('instructions.txt')]",

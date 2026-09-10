@@ -1,7 +1,7 @@
 openapi: 3.0.4
 info:
   title: FS Purchase Analytics API - Subset
-  description: "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one or two dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\").\n"
+  description: "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n"
   version: 1.0.0
 servers:
   - url: https://bmagents-bzf5fybng9c7cnbk.centralindia-01.azurewebsites.net/api
@@ -133,7 +133,7 @@ paths:
   /get_purchase_aggregator:
     post:
       summary: Retrieve aggregated purchase totals/breakdowns (OLAP-style cube).
-      description: "Groups the purchase register by one or two dimensions and returns a totals summary plus a per-group breakdown with all measures (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count). Use this whenever the user wants totals, trends, a breakdown, or a summary rather than raw invoice rows. group_by must be sent as a JSON array (1 or 2 dimensions) in the request body.\n"
+      description: "Groups the purchase register by one to four dimensions and returns a totals summary plus a per-group breakdown with all measures (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count). Use this whenever the user wants totals, trends, a breakdown, or a summary rather than raw invoice rows. group_by must be sent as a JSON array (1 to 4 dimensions) in the request body. Supports optional sort_by/sort_order and page/page_size for large breakdowns.\n"
       operationId: getPurchaseAggregator
       requestBody:
         content:
@@ -144,7 +144,7 @@ paths:
               type: object
               properties:
                 group_by:
-                  maxItems: 2
+                  maxItems: 4
                   minItems: 1
                   type: array
                   items:
@@ -157,7 +157,7 @@ paths:
                       - payment_flag
                       - gst_type
                     type: string
-                  description: "1 or 2 dimensions to group by, sent as an array even for a single dimension, e.g. [\"document_date\"] or [\"document_date\",\"msme_flag\"]. Map user phrasing to dimensions as follows — document_date: \"by month\", \"trend over time\", \"invoice date\" totals; due_date: grouping by when payment is/was due; payment_date: grouping by when invoices were actually paid; supplier: \"by supplier\", \"top vendors\", \"which supplier\"; msme_flag: \"MSME vs non-MSME\", \"MSME split\"; payment_flag: \"paid vs unpaid\", \"payment status split\"; gst_type: \"intra-state vs inter-state\", \"INTRA vs INTER\". Combine two dimensions for compound asks, e.g. \"monthly MSME spend\" -> [\"document_date\",\"msme_flag\"].\n"
+                  description: "1 to 4 dimensions to group by, sent as an array even for a single dimension, e.g. [\"document_date\"] or [\"document_date\",\"msme_flag\"]. Map user phrasing to dimensions as follows — document_date: \"by month\", \"trend over time\", \"invoice date\" totals; due_date: grouping by when payment is/was due; payment_date: grouping by when invoices were actually paid; supplier: \"by supplier\", \"top vendors\", \"which supplier\"; msme_flag: \"MSME vs non-MSME\", \"MSME split\"; payment_flag: \"paid vs unpaid\", \"payment status split\"; gst_type: \"intra-state vs inter-state\", \"INTRA vs INTER\". Combine dimensions for compound asks, e.g. \"monthly MSME spend\" -> [\"document_date\",\"msme_flag\"], or \"monthly MSME payment status split\" -> [\"document_date\",\"msme_flag\",\"payment_flag\"]. Pick only as many dimensions as the question needs — do not add extra dimensions just because up to 4 are allowed.\n"
                 date_granularity:
                   enum:
                     - daily
@@ -207,6 +207,24 @@ paths:
                 payment_flag:
                   type: boolean
                   description: "Scope aggregation to paid invoices only (true) or unpaid/outstanding invoices only (false) before grouping.\n"
+                sort_by:
+                  type: string
+                  description: "Field to sort the breakdown by. Accepts any measure (invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count) or any dimension currently in group_by (e.g. supplier_name, document_date). Use for phrasing like \"top suppliers by spend\" -> sort_by: invoice_value; \"most overdue\" -> sort_by: overdue_count. Omit for no particular order.\n"
+                sort_order:
+                  type: string
+                  enum:
+                    - asc
+                    - desc
+                  description: "Sort direction. Defaults to desc when sort_by is a measure (so \"top\"/\"highest\" queries work by default) and asc when sort_by is a dimension. Use asc explicitly for \"lowest\"/\"least\"/\"smallest\" phrasing.\n"
+                page:
+                  type: integer
+                  minimum: 1
+                  description: "Page number of breakdown groups to retrieve, starting at 1. Only set this when paging through a previously truncated breakdown (has_more was true) or when the user explicitly wants a specific page.\n"
+                page_size:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: "Number of breakdown groups to return. If both page and page_size are omitted, ALL matching groups are returned in one response (the recommended default for most questions). Set page_size when the user asks for a limited count, e.g. \"top 5 suppliers\" -> page_size: 5 with sort_by/sort_order set accordingly.\n"
         required: true
       responses:
         '200':
@@ -230,12 +248,33 @@ paths:
                   date_granularity:
                     type: string
                     description: The bucket size that was used for any date dimension.
+                  total_groups:
+                    type: integer
+                    description: Total number of distinct breakdown groups matched, before pagination.
+                  page:
+                    type: integer
+                    description: The page of breakdown groups returned. 1 if no pagination was requested.
+                  page_size:
+                    type: integer
+                    description: Number of groups per page. Equals total_groups when no pagination was requested (all groups returned).
+                  total_pages:
+                    type: integer
+                    description: Total number of pages available for this breakdown.
+                  has_more:
+                    type: boolean
+                    description: True if more groups exist beyond this page. If true, mention this to the user and offer to show more rather than presenting the breakdown as complete.
+                  sort_by:
+                    type: string
+                    description: Echoed sort field, present only when sort_by was requested.
+                  sort_order:
+                    type: string
+                    description: Echoed sort direction, present only when sort_by was requested.
                   summary:
                     type: object
-                    description: "Grand totals across all matching records: invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count. Use this to answer \"how much / how many in total\" questions.\n"
+                    description: "Grand totals across ALL matching records (not just the returned page of the breakdown): invoice_count, taxable_value, cgst_amount, sgst_amount, igst_amount, cess_amount, invoice_value, overdue_count. Use this to answer \"how much / how many in total\" questions.\n"
                   breakdown:
                     type: array
                     items:
                       type: object
-                    description: "One row per group_by combination, each containing the group's dimension value(s) plus the same eight measures as summary. Use this for \"by month\", \"by supplier\", etc. breakdown tables.\n"
+                    description: "The current page of breakdown rows, one per group_by combination, each containing the group's dimension value(s) plus the same eight measures as summary. Use this for \"by month\", \"by supplier\", etc. breakdown tables. Check has_more/total_groups before presenting this as the full picture.\n"
 components: { }
