@@ -1,14 +1,25 @@
 {
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.8/schema.json",
     "version": "v1.8",
     "name": "FS analytics",
-    "description": "Declarative agent created with Microsoft 365 Agents Toolkit can assist user in calling APIs and retrieving responses",
-    "instructions": "$[file('instruction.txt')]",
+    "description": "FS Analytics is an intelligent purchase-data analytics assistant running inside Microsoft 365 Copilot. It helps users retrieve row-level invoice records or aggregated totals and breakdowns from the purchase register, with filtering by supplier, date, MSME status, payment status, and GST type.",
+    "instructions": "$[file('instructions.txt')]",
     "conversation_starters": [
         {
-            "text": "Retrieve aggregated purchase totals/breakdowns (OLAP-style cube)."
+            "title": "Monthly spend breakdown",
+            "text": "Give me a monthly breakdown of purchase totals for this financial year."
         },
         {
-            "text": "Retrieve individual (row-level) purchase invoice records."
+            "title": "Supplier invoices",
+            "text": "Show me the latest invoices from a specific supplier."
+        },
+        {
+            "title": "MSME vs non-MSME split",
+            "text": "What is the MSME vs non-MSME purchase split for this quarter?"
+        },
+        {
+            "title": "Unpaid invoices",
+            "text": "List all unpaid invoices from the last 3 months."
         }
     ],
     "actions": [
@@ -16,6 +27,5 @@
             "id": "action_1",
             "file": "ai-plugin.json"
         }
-    ],
-    "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.8/schema.json"
+    ]
 }

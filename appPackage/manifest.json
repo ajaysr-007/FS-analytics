@@ -4,27 +4,27 @@
     "version": "1.0.0",
     "id": "${{TEAMS_APP_ID}}",
     "developer": {
-        "name": "My App, Inc.",
-        "websiteUrl": "https://www.example.com",
-        "privacyUrl": "https://www.example.com/privacy",
-        "termsOfUseUrl": "https://www.example.com/termofuse"
+        "name": "BotMantra",
+        "websiteUrl": "https://www.botmantra.ai",
+        "privacyUrl": "https://www.botmantra.ai/privacy",
+        "termsOfUseUrl": "https://www.botmantra.ai/termofuse"
     },
     "icons": {
         "color": "color.png",
         "outline": "outline.png"
     },
     "name": {
-        "short": "FS analytics${{APP_NAME_SUFFIX}}",
-        "full": "Full name for FS analytics"
+        "short": "FS analytics",
+        "full": "FS analytics"
     },
     "description": {
-        "short": "Short description for FS analytics",
-        "full": "Full description for FS analytics"
+        "short": "FS Analytics",
+        "full": "FS Analytics is an intelligent purchase-data analytics assistant running inside Microsoft 365 Copilot. It helps users retrieve row-level invoice records or aggregated totals and breakdowns from the purchase register."
     },
     "accentColor": "#FFFFFF",
     "supportsChannelFeatures": "tier1",
     "copilotAgents": {
-        "declarativeAgents": [            
+        "declarativeAgents": [
             {
                 "id": "declarativeAgent",
                 "file": "declarativeAgent.json"
