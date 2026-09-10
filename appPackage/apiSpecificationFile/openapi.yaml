@@ -10,7 +10,7 @@ paths:
   /get_purchase_register:
     get:
       summary: Retrieve individual (row-level) purchase invoice records.
-      description: "Returns a paginated list of purchase register records, optionally filtered by document number, supplier, date ranges, MSME status, or payment status. Use this when the user wants to see specific invoices/transactions rather than totals or a breakdown.\n"
+      description: "Returns a paginated list of purchase register records, optionally filtered by document number, supplier, date ranges, MSME status, or payment status, with optional sorting (sort_by, sort_order) and pagination. Use this when the user wants to see specific invoices/transactions rather than totals or a breakdown.\n"
       operationId: getPurchaseRegister
       parameters:
         - name: document_number
@@ -102,6 +102,21 @@ paths:
             minimum: 1
             type: integer
             default: 100
+        - name: sort_by
+          in: query
+          description: "Field to sort records by (e.g. document_date, due_date, payment_date, invoice_value, taxable_value, supplier_name, overdue). Use for queries like \"latest invoices\" -> sort_by: document_date; \"highest value\" -> sort_by: invoice_value; \"oldest due\" -> sort_by: due_date. Omit to preserve default order.\n"
+          explode: false
+          schema:
+            type: string
+        - name: sort_order
+          in: query
+          description: "Sort direction. Defaults to desc for dates and monetary amounts (so \"latest\" and \"highest\" work by default), and asc for text fields (supplier_name). Use asc explicitly for \"oldest due\" or alphabetical sorting.\n"
+          explode: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
       responses:
         '200':
           description: Successful response with a page of purchase register records.
@@ -125,6 +140,15 @@ paths:
                   total_pages:
                     type: integer
                     description: Total number of pages available for this filter set.
+                  has_more:
+                    type: boolean
+                    description: True if more records exist beyond this page. If true, mention this to the user and offer to fetch the next page.
+                  sort_by:
+                    type: string
+                    description: Echoed sort field, present only when sort_by was requested.
+                  sort_order:
+                    type: string
+                    description: Echoed sort direction, present only when sort_by was requested.
                   records:
                     type: array
                     items:

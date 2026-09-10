@@ -2,8 +2,8 @@
     "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
     "schema_version": "v2.4",
     "name_for_human": "FS Purchase Analytics API",
-    "description_for_human": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
-    "description_for_model": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
+    "description_for_human": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions with optional sorting and pagination. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
+    "description_for_model": "Provides row-level and aggregated (cube-style) access to the purchase register for an AI agent. Use get_purchase_register when the user wants to see individual invoices/transactions with optional sorting and pagination. Use get_purchase_aggregator when the user wants totals, breakdowns, trends, or a summary grouped by one to four dimensions (e.g. \"monthly totals\", \"breakdown by supplier\", \"MSME vs non-MSME spend\"), with optional sorting and pagination of the breakdown.\n",
     "contact_email": "support@botmantra.com",
     "namespace": "fsanalytics",
     "capabilities": {},
@@ -14,7 +14,7 @@
         },
         {
             "name": "getPurchaseRegister",
-            "description": "Returns a paginated list of purchase register records, optionally filtered by document number, supplier, date ranges, MSME status, or payment status. Use this when the user wants to see specific invoices/transactions rather than totals or a breakdown.\n"
+            "description": "Returns a paginated list of purchase register records, optionally filtered by document number, supplier, date ranges, MSME status, or payment status, with optional sorting (sort_by, sort_order) and pagination. Use this when the user wants to see specific invoices/transactions rather than totals or a breakdown.\n"
         }
     ],
     "runtimes": [
